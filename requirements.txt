@@ -6,3 +6,4 @@ opencv-python==4.10.0.84
 python-dotenv==1.0.1
 numpy==1.26.4
 weditor==0.7.2
+pyinstaller==6.19.0
