@@ -1,5 +1,6 @@
 uiautomator2==2.16.26
 pyzbar==0.1.9
+Pillow==10.4.0
 mss==9.0.1
 opencv-python==4.10.0.84
 python-dotenv==1.0.1
