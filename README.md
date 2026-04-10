@@ -52,6 +52,12 @@ pyinstaller --onefile --name rotondaro-farm main.py
 
 O `.exe` fica em `dist/`. Coloque uma cópia do `.env` ao lado do executável (ou defina variáveis no sistema) para `python-dotenv` carregar as configurações.
 
+Build recomendado para distribuição (usa `rotondaro-farm.spec`, com coleta de binários/dados do `pyzbar`):
+
+```bash
+pyinstaller rotondaro-farm.spec
+```
+
 **Importante para distribuição:** o usuário final ainda precisa de **ADB no PATH** (ou você embute/distribui o `adb` e ajusta o código depois), **USB debugging** e, em PCs sem Python, conferir se **DLLs do ZBar** usadas pelo `pyzbar` foram incluídas — pode ser necessário um `.spec` com dados binários ou testes em máquina limpa.
 
 ## Adaptar para outro banco
