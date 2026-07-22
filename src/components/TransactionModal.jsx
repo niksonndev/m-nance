@@ -1,0 +1,423 @@
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Save, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabaseClient';
+import { useAuth } from '../context/AuthContext';
+
+const CATEGORIES = {
+  income: ['Salário', 'Bico', 'Outro'],
+  expense: ['Gasto Fixo', 'Gasto do Dia a Dia', 'Investimentos', 'Outro'],
+};
+
+export default function TransactionModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  transaction = null,
+}) {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    type: 'expense',
+    amount: '',
+    currency: 'BRL',
+    category: '',
+    description: '',
+    date: new Date().toISOString().split('T')[0],
+    is_recurring: false,
+    recurring_frequency: 'monthly',
+  });
+  const [errors, setErrors] = useState({});
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (transaction) {
+        setFormData({
+          type: transaction.type,
+          amount: transaction.amount,
+          currency: transaction.currency || 'BRL',
+          category: transaction.category,
+          description: transaction.description || '',
+          date:
+            transaction.date?.split('T')[0] ||
+            new Date().toISOString().split('T')[0],
+          is_recurring: transaction.is_recurring || false,
+          recurring_frequency: transaction.recurring_frequency || 'monthly',
+        });
+      } else {
+        setFormData({
+          type: 'expense',
+          amount: '',
+          currency: 'BRL',
+          category: '',
+          description: '',
+          date: new Date().toISOString().split('T')[0],
+          is_recurring: false,
+          recurring_frequency: 'monthly',
+        });
+      }
+      setErrors({});
+    }
+  }, [isOpen, transaction]);
+
+  useEffect(() => {
+    setCategories(CATEGORIES[formData.type] || []);
+    if (!CATEGORIES[formData.type]?.includes(formData.category)) {
+      setFormData((prev) => ({
+        ...prev,
+        category: CATEGORIES[formData.type]?.[0] || '',
+      }));
+    }
+  }, [formData.type]);
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.amount || parseFloat(formData.amount) <= 0) {
+      newErrors.amount = 'Valor deve ser maior que zero';
+    }
+    if (!formData.category) {
+      newErrors.category = 'Selecione uma categoria';
+    }
+    if (!formData.date) {
+      newErrors.date = 'Data é obrigatória';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    setLoading(true);
+    try {
+      const transactionData = {
+        type: formData.type,
+        amount: parseFloat(formData.amount),
+        currency: formData.currency,
+        category: formData.category,
+        description: formData.description,
+        date: formData.date,
+        user_id: user.id,
+        is_recurring: formData.is_recurring,
+        recurring_frequency: formData.is_recurring
+          ? formData.recurring_frequency
+          : null,
+      };
+
+      let result;
+      if (transaction) {
+        result = await supabase
+          .from('transactions')
+          .update(transactionData)
+          .eq('id', transaction.id)
+          .select();
+      } else {
+        result = await supabase
+          .from('transactions')
+          .insert([transactionData])
+          .select();
+      }
+
+      if (result.error) throw result.error;
+
+      // Se for recorrente, salva na tabela recurring_transactions
+      if (formData.is_recurring && !transaction) {
+        const nextDate = new Date(formData.date);
+        if (formData.recurring_frequency === 'monthly') {
+          nextDate.setMonth(nextDate.getMonth() + 1);
+        } else {
+          nextDate.setDate(nextDate.getDate() + 7);
+        }
+
+        await supabase.from('recurring_transactions').insert([
+          {
+            user_id: user.id,
+            type: formData.type,
+            amount: parseFloat(formData.amount),
+            currency: formData.currency,
+            category: formData.category,
+            description: formData.description,
+            frequency: formData.recurring_frequency,
+            next_date: nextDate.toISOString().split('T')[0],
+            active: true,
+          },
+        ]);
+      }
+
+      onSuccess();
+      onClose();
+    } catch (error) {
+      setErrors({ submit: error.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value, type: inputType, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: inputType === 'checkbox' ? checked : value,
+    }));
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center p-4'>
+          {/* Overlay */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className='absolute inset-0 bg-black/50'
+            onClick={onClose}
+          />
+
+          {/* Modal Content - CENTRALIZADO */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className='fixed z-50 w-full max-w-md sm:max-w-lg mx-4 sm:mx-auto bg-monkey-card rounded-2xl border border-monkey-muted/30 overflow-hidden'
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className='flex items-center justify-between p-4 border-b border-monkey-muted/30'>
+              <h2 className='text-xl font-bold text-monkey-text'>
+                {transaction ? 'Editar Transação' : 'Nova Transação'}
+              </h2>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={onClose}
+                className='p-1 rounded-lg text-monkey-muted hover:bg-monkey-muted/10 hover:text-monkey-text'
+              >
+                <X className='w-5 h-5' />
+              </motion.button>
+            </div>
+
+            <form onSubmit={handleSubmit} className='p-4 space-y-4'>
+              {errors.submit && (
+                <motion.p
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className='text-sm text-monkey-danger bg-monkey-danger/10 p-2 rounded-lg'
+                >
+                  {errors.submit}
+                </motion.p>
+              )}
+
+              {/* Tipo */}
+              <div>
+                <label className='block text-sm font-medium text-monkey-text mb-2'>
+                  Tipo
+                </label>
+                <div className='flex gap-2'>
+                  {['income', 'expense'].map((type) => (
+                    <button
+                      key={type}
+                      type='button'
+                      onClick={() => setFormData((prev) => ({ ...prev, type }))}
+                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                        formData.type === type
+                          ? type === 'income'
+                            ? 'bg-monkey-success/20 text-monkey-success border border-monkey-success/30'
+                            : 'bg-monkey-danger/20 text-monkey-danger border border-monkey-danger/30'
+                          : 'bg-monkey-muted/10 text-monkey-muted hover:bg-monkey-muted/20'
+                      }`}
+                    >
+                      {type === 'income' ? 'Receita' : 'Despesa'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Moeda + Valor */}
+              <div className='flex flex-col sm:flex-row gap-3'>
+                <div className='w-full sm:w-24'>
+                  <label className='block text-sm font-medium text-monkey-text mb-2'>
+                    Moeda
+                  </label>
+                  <select
+                    name='currency'
+                    value={formData.currency}
+                    onChange={handleChange}
+                    className='input-field'
+                  >
+                    <option value='BRL'>R$</option>
+                    <option value='EUR'>€</option>
+                  </select>
+                </div>
+                <div className='flex-1'>
+                  <label
+                    htmlFor='amount'
+                    className='block text-sm font-medium text-monkey-text mb-2'
+                  >
+                    Valor
+                  </label>
+                  <input
+                    id='amount'
+                    name='amount'
+                    type='number'
+                    step='0.01'
+                    min='0.01'
+                    value={formData.amount}
+                    onChange={handleChange}
+                    className={`input-field ${errors.amount ? 'border-monkey-danger' : ''}`}
+                    placeholder='0,00'
+                  />
+                  {errors.amount && (
+                    <p className='text-sm text-monkey-danger mt-1'>
+                      {errors.amount}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Categoria */}
+              <div>
+                <label
+                  htmlFor='category'
+                  className='block text-sm font-medium text-monkey-text mb-2'
+                >
+                  Categoria
+                </label>
+                <select
+                  id='category'
+                  name='category'
+                  value={formData.category}
+                  onChange={handleChange}
+                  className={`input-field ${errors.category ? 'border-monkey-danger' : ''}`}
+                >
+                  <option value=''>Selecione uma categoria</option>
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+                {errors.category && (
+                  <p className='text-sm text-monkey-danger mt-1'>
+                    {errors.category}
+                  </p>
+                )}
+              </div>
+
+              {/* Descrição */}
+              <div>
+                <label
+                  htmlFor='description'
+                  className='block text-sm font-medium text-monkey-text mb-2'
+                >
+                  Descrição (opcional)
+                </label>
+                <input
+                  id='description'
+                  name='description'
+                  type='text'
+                  value={formData.description}
+                  onChange={handleChange}
+                  className='input-field'
+                  placeholder='Ex: Salário de janeiro, Mercado...'
+                />
+              </div>
+
+              {/* Data */}
+              <div>
+                <label
+                  htmlFor='date'
+                  className='block text-sm font-medium text-monkey-text mb-2'
+                >
+                  Data
+                </label>
+                <input
+                  id='date'
+                  name='date'
+                  type='date'
+                  value={formData.date}
+                  onChange={handleChange}
+                  className={`input-field ${errors.date ? 'border-monkey-danger' : ''}`}
+                />
+                {errors.date && (
+                  <p className='text-sm text-monkey-danger mt-1'>
+                    {errors.date}
+                  </p>
+                )}
+              </div>
+
+              {/* Recorrência */}
+              <div className='flex items-center gap-3 p-3 bg-monkey-bg rounded-lg border border-monkey-muted/20'>
+                <input
+                  id='is_recurring'
+                  name='is_recurring'
+                  type='checkbox'
+                  checked={formData.is_recurring}
+                  onChange={handleChange}
+                  className='w-4 h-4 rounded border-monkey-muted bg-monkey-card text-monkey-primary focus:ring-monkey-primary'
+                />
+                <div className='flex-1'>
+                  <label
+                    htmlFor='is_recurring'
+                    className='text-sm font-medium text-monkey-text cursor-pointer'
+                  >
+                    Transação recorrente
+                  </label>
+                  <p className='text-xs text-monkey-muted'>
+                    Repetir automaticamente
+                  </p>
+                </div>
+                {formData.is_recurring && (
+                  <select
+                    name='recurring_frequency'
+                    value={formData.recurring_frequency}
+                    onChange={handleChange}
+                    className='input-field w-32 text-sm py-1'
+                  >
+                    <option value='monthly'>Mensal</option>
+                    <option value='weekly'>Semanal</option>
+                  </select>
+                )}
+              </div>
+
+              {/* Botões */}
+              <div className='flex gap-3 pt-2'>
+                <button
+                  type='button'
+                  onClick={onClose}
+                  className='flex-1 btn-secondary'
+                >
+                  Cancelar
+                </button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  type='submit'
+                  disabled={loading}
+                  className='flex-1 btn-primary flex items-center justify-center gap-2'
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className='w-4 h-4 animate-spin' />
+                      Salvando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className='w-4 h-4' />
+                      {transaction ? 'Atualizar' : 'Salvar'}
+                    </>
+                  )}
+                </motion.button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}
