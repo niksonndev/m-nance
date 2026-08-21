@@ -12,7 +12,6 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useState } from 'react';
-import TransactionModal from './TransactionModal';
 
 const TYPE_LABELS = {
   income: 'Receita',
@@ -30,7 +29,6 @@ export default function TransactionList({
   onDelete,
   loading,
 }) {
-  const [editingTransaction, setEditingTransaction] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
 
@@ -146,7 +144,7 @@ export default function TransactionList({
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                onClick={() => setEditingTransaction(transaction)}
+                onClick={() => onEdit(transaction)}
                 className='p-2 rounded-lg text-monkey-muted hover:bg-monkey-muted/10 hover:text-monkey-text transition-colors'
                 aria-label='Editar transação'
               >
