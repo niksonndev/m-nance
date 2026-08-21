@@ -21,7 +21,6 @@ import {
 import { ptBR } from 'date-fns/locale';
 import { useTransactions } from '../hooks/useTransactions';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '../lib/supabaseClient';
 import DashboardCards from '../components/DashboardCards';
 import PieChart from '../components/PieChart';
 import TransactionList from '../components/TransactionList';
@@ -31,8 +30,8 @@ import { formatCurrency } from '../utils/formatters';
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const { transactions, loading, getSummary, getCategorySummary, refetch } =
-    useTransactions();
+  const { transactions, loading, getSummary, getCategorySummary, refetch,
+    addTransaction, updateTransaction, deleteTransaction } = useTransactions();
   const [showModal, setShowModal] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -135,9 +134,17 @@ export default function Dashboard() {
     refetch();
   };
 
+  const handleSave = async (transactionData) => {
+    if (editingTransaction) {
+      return updateTransaction(editingTransaction.id, transactionData);
+    }
+    return addTransaction(transactionData);
+  };
+
   const handleDelete = async (id) => {
     if (window.confirm('Tem certeza que deseja excluir esta transação?')) {
-      await supabase.from('transactions').delete().eq('id', id);
+      const { error } = await deleteTransaction(id);
+      if (error) console.error('Erro ao excluir transação:', error);
       refetch();
     }
   };
@@ -285,6 +292,7 @@ export default function Dashboard() {
         isOpen={showModal}
         onClose={handleCloseModal}
         onSuccess={handleSuccess}
+        onSave={handleSave}
         transaction={editingTransaction}
       />
     </div>

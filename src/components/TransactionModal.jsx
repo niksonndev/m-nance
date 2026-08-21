@@ -9,6 +9,7 @@ export default function TransactionModal({
   isOpen,
   onClose,
   onSuccess,
+  onSave,
   transaction = null,
 }) {
   const { user } = useAuth();
@@ -88,6 +89,8 @@ export default function TransactionModal({
 
     setLoading(true);
     try {
+      // O user_id é adicionado pelo hook useTransactions (addTransaction/
+      // updateTransaction), que também atualiza o estado da página.
       const transactionData = {
         type: formData.type,
         amount: parseFloat(formData.amount),
@@ -95,28 +98,14 @@ export default function TransactionModal({
         category: formData.category,
         description: formData.description,
         date: formData.date,
-        user_id: user.id,
         is_recurring: formData.is_recurring,
         recurring_frequency: formData.is_recurring
           ? formData.recurring_frequency
           : null,
       };
 
-      let result;
-      if (transaction) {
-        result = await supabase
-          .from('transactions')
-          .update(transactionData)
-          .eq('id', transaction.id)
-          .select();
-      } else {
-        result = await supabase
-          .from('transactions')
-          .insert([transactionData])
-          .select();
-      }
-
-      if (result.error) throw result.error;
+      const { error } = await onSave(transactionData);
+      if (error) throw error;
 
       // Se for recorrente, salva na tabela recurring_transactions
       if (formData.is_recurring && !transaction) {
