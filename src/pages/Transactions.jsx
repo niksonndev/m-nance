@@ -1,13 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import {
-  Plus,
-  Filter,
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  Upload,
-} from 'lucide-react';
+import { Plus, Download } from 'lucide-react';
 import {
   format,
   startOfMonth,
@@ -17,16 +10,22 @@ import {
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useTransactions } from '../hooks/useTransactions';
-import { useAuth } from '../context/AuthContext';
 import TransactionList from '../components/TransactionList';
 import TransactionModal from '../components/TransactionModal';
 import Filters from '../components/Filters';
+import MonthNavigator from '../components/MonthNavigator';
 import { parseLocalDate } from '../utils/formatters';
+import { filterAndSortTransactions } from '../utils/transactionFilters';
 
 export default function Transactions() {
-  const { user } = useAuth();
-  const { transactions, loading, refetch, addTransaction, updateTransaction,
-    deleteTransaction } = useTransactions();
+  const {
+    transactions,
+    loading,
+    refetch,
+    addTransaction,
+    updateTransaction,
+    deleteTransaction,
+  } = useTransactions();
   const [showModal, setShowModal] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -51,61 +50,10 @@ export default function Transactions() {
     });
   }, [transactions, monthStart, monthEnd]);
 
-  const filteredTransactions = useMemo(() => {
-    let result = [...monthlyTransactions];
-
-    if (filters.type) {
-      result = result.filter((t) => t.type === filters.type);
-    }
-    if (filters.category) {
-      result = result.filter((t) => t.category === filters.category);
-    }
-    if (filters.dateFrom) {
-      result = result.filter(
-        (t) => parseLocalDate(t.date) >= parseLocalDate(filters.dateFrom),
-      );
-    }
-    if (filters.dateTo) {
-      result = result.filter(
-        (t) => parseLocalDate(t.date) <= parseLocalDate(filters.dateTo),
-      );
-    }
-    if (filters.search) {
-      const search = filters.search.toLowerCase();
-      result = result.filter(
-        (t) =>
-          t.description?.toLowerCase().includes(search) ||
-          t.category?.toLowerCase().includes(search),
-      );
-    }
-    if (filters.minAmount) {
-      result = result.filter((t) => t.amount >= parseFloat(filters.minAmount));
-    }
-    if (filters.maxAmount) {
-      result = result.filter((t) => t.amount <= parseFloat(filters.maxAmount));
-    }
-
-    switch (filters.sortBy) {
-      case 'date_asc':
-        result.sort((a, b) => parseLocalDate(a.date) - parseLocalDate(b.date));
-        break;
-      case 'amount_desc':
-        result.sort((a, b) => b.amount - a.amount);
-        break;
-      case 'amount_asc':
-        result.sort((a, b) => a.amount - b.amount);
-        break;
-      case 'category':
-        result.sort((a, b) =>
-          (a.category || '').localeCompare(b.category || ''),
-        );
-        break;
-      default:
-        result.sort((a, b) => parseLocalDate(b.date) - parseLocalDate(a.date));
-    }
-
-    return result;
-  }, [monthlyTransactions, filters]);
+  const filteredTransactions = useMemo(
+    () => filterAndSortTransactions(monthlyTransactions, filters),
+    [monthlyTransactions, filters],
+  );
 
   const handleOpenModal = (transaction = null) => {
     setEditingTransaction(transaction);
@@ -182,52 +130,33 @@ export default function Transactions() {
             {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
           </p>
         </div>
-        <div className='flex items-center gap-3 flex-wrap'>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={prevMonth}
-            className='p-2 rounded-lg bg-monkey-card border border-monkey-muted/30 text-monkey-muted hover:text-monkey-text hover:border-monkey-primary/50 transition-colors'
-            aria-label='Mês anterior'
-          >
-            <ChevronLeft className='w-5 h-5' />
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={goToCurrentMonth}
-            className='px-4 py-2 rounded-lg bg-monkey-card border border-monkey-muted/30 text-monkey-text text-sm font-medium hover:border-monkey-primary/50 transition-colors'
-          >
-            Mês atual
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={nextMonth}
-            className='p-2 rounded-lg bg-monkey-card border border-monkey-muted/30 text-monkey-muted hover:text-monkey-text hover:border-monkey-primary/50 transition-colors'
-            aria-label='Próximo mês'
-          >
-            <ChevronRight className='w-5 h-5' />
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={exportToCSV}
-            className='btn-secondary flex items-center gap-2'
-          >
-            <Download className='w-4 h-4' />
-            Exportar CSV
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => handleOpenModal()}
-            className='btn-primary flex items-center gap-2'
-          >
-            <Plus className='w-4 h-4' />
-            Nova transação
-          </motion.button>
-        </div>
+        <MonthNavigator
+          onPrev={prevMonth}
+          onNext={nextMonth}
+          onCurrent={goToCurrentMonth}
+          actions={
+            <>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={exportToCSV}
+                className='btn-secondary flex items-center gap-2'
+              >
+                <Download className='w-4 h-4' />
+                Exportar CSV
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handleOpenModal()}
+                className='btn-primary flex items-center gap-2'
+              >
+                <Plus className='w-4 h-4' />
+                Nova transação
+              </motion.button>
+            </>
+          }
+        />
       </motion.div>
 
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>

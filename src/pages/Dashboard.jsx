@@ -1,16 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import {
-  Plus,
-  TrendingUp,
-  TrendingDown,
-  Wallet,
-  CreditCard,
-  Calendar,
-  Filter,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
+import { Plus } from 'lucide-react';
 import {
   format,
   startOfMonth,
@@ -20,18 +10,26 @@ import {
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useTransactions } from '../hooks/useTransactions';
-import { useAuth } from '../context/AuthContext';
 import DashboardCards from '../components/DashboardCards';
 import PieChart from '../components/PieChart';
 import TransactionList from '../components/TransactionList';
 import TransactionModal from '../components/TransactionModal';
 import Filters from '../components/Filters';
-import { formatCurrency, parseLocalDate } from '../utils/formatters';
+import MonthNavigator from '../components/MonthNavigator';
+import { parseLocalDate } from '../utils/formatters';
+import { filterAndSortTransactions } from '../utils/transactionFilters';
 
 export default function Dashboard() {
-  const { user } = useAuth();
-  const { transactions, loading, getSummary, getCategorySummary, refetch,
-    addTransaction, updateTransaction, deleteTransaction } = useTransactions();
+  const {
+    transactions,
+    loading,
+    getSummary,
+    getCategorySummary,
+    refetch,
+    addTransaction,
+    updateTransaction,
+    deleteTransaction,
+  } = useTransactions();
   const [showModal, setShowModal] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -54,55 +52,10 @@ export default function Dashboard() {
     });
   }, [transactions, monthStart, monthEnd]);
 
-  const filteredTransactions = useMemo(() => {
-    let result = [...monthlyTransactions];
-
-    if (filters.type) {
-      result = result.filter((t) => t.type === filters.type);
-    }
-    if (filters.category) {
-      result = result.filter((t) => t.category === filters.category);
-    }
-    if (filters.dateFrom) {
-      result = result.filter(
-        (t) => parseLocalDate(t.date) >= parseLocalDate(filters.dateFrom),
-      );
-    }
-    if (filters.dateTo) {
-      result = result.filter(
-        (t) => parseLocalDate(t.date) <= parseLocalDate(filters.dateTo),
-      );
-    }
-    if (filters.search) {
-      const search = filters.search.toLowerCase();
-      result = result.filter(
-        (t) =>
-          t.description?.toLowerCase().includes(search) ||
-          t.category?.toLowerCase().includes(search),
-      );
-    }
-
-    switch (filters.sortBy) {
-      case 'date_asc':
-        result.sort((a, b) => parseLocalDate(a.date) - parseLocalDate(b.date));
-        break;
-      case 'amount_desc':
-        result.sort((a, b) => b.amount - a.amount);
-        break;
-      case 'amount_asc':
-        result.sort((a, b) => a.amount - b.amount);
-        break;
-      case 'category':
-        result.sort((a, b) =>
-          (a.category || '').localeCompare(b.category || ''),
-        );
-        break;
-      default:
-        result.sort((a, b) => parseLocalDate(b.date) - parseLocalDate(a.date));
-    }
-
-    return result;
-  }, [monthlyTransactions, filters]);
+  const filteredTransactions = useMemo(
+    () => filterAndSortTransactions(monthlyTransactions, filters),
+    [monthlyTransactions, filters],
+  );
 
   const stats = useMemo(() => {
     const summary = getSummary(monthlyTransactions);
@@ -171,44 +124,23 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className='flex flex-wrap items-center gap-2 sm:gap-3'>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={prevMonth}
-            className='p-2 rounded-lg bg-monkey-card border border-monkey-muted/30 text-monkey-muted hover:text-monkey-text hover:border-monkey-primary/50 transition-colors'
-            aria-label='Mês anterior'
-          >
-            <ChevronLeft className='w-5 h-5' />
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={goToCurrentMonth}
-            className='px-3 sm:px-4 py-2 rounded-lg bg-monkey-card border border-monkey-muted/30 text-monkey-text text-sm font-medium hover:border-monkey-primary/50 transition-colors'
-          >
-            Mês atual
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={nextMonth}
-            className='p-2 rounded-lg bg-monkey-card border border-monkey-muted/30 text-monkey-muted hover:text-monkey-text hover:border-monkey-primary/50 transition-colors'
-            aria-label='Próximo mês'
-          >
-            <ChevronRight className='w-5 h-5' />
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => handleOpenModal()}
-            className='btn-primary flex items-center gap-2 ml-auto'
-          >
-            <Plus className='w-4 h-4' />
-            <span className='hidden sm:inline'>Nova transação</span>
-            <span className='sm:hidden'>Nova</span>
-          </motion.button>
-        </div>
+        <MonthNavigator
+          onPrev={prevMonth}
+          onNext={nextMonth}
+          onCurrent={goToCurrentMonth}
+          actions={
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => handleOpenModal()}
+              className='btn-primary flex items-center gap-2 ml-auto'
+            >
+              <Plus className='w-4 h-4' />
+              <span className='hidden sm:inline'>Nova transação</span>
+              <span className='sm:hidden'>Nova</span>
+            </motion.button>
+          }
+        />
       </motion.div>
 
       {/* DashboardCards - horizontal no desktop, vertical no mobile */}
