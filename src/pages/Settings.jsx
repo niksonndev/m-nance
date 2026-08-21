@@ -127,8 +127,12 @@ export default function Settings() {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.admin.deleteUser(user.id);
+      // A API admin (auth.admin.deleteUser) exige a service_role key e não
+      // pode ser usada no browser. A exclusão é feita via RPC criada na
+      // migration supabase/migrations/001_create_delete_account_function.sql
+      const { error } = await supabase.rpc('delete_account');
       if (error) throw error;
+      await signOut();
       navigate('/login');
     } catch (error) {
       showMessage('error', error.message);
