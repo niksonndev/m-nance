@@ -21,6 +21,7 @@ import { useAuth } from '../context/AuthContext';
 import TransactionList from '../components/TransactionList';
 import TransactionModal from '../components/TransactionModal';
 import Filters from '../components/Filters';
+import { parseLocalDate } from '../utils/formatters';
 
 export default function Transactions() {
   const { user } = useAuth();
@@ -45,7 +46,7 @@ export default function Transactions() {
 
   const monthlyTransactions = useMemo(() => {
     return transactions.filter((t) => {
-      const date = new Date(t.date);
+      const date = parseLocalDate(t.date);
       return date >= monthStart && date <= monthEnd;
     });
   }, [transactions, monthStart, monthEnd]);
@@ -61,12 +62,12 @@ export default function Transactions() {
     }
     if (filters.dateFrom) {
       result = result.filter(
-        (t) => new Date(t.date) >= new Date(filters.dateFrom),
+        (t) => parseLocalDate(t.date) >= parseLocalDate(filters.dateFrom),
       );
     }
     if (filters.dateTo) {
       result = result.filter(
-        (t) => new Date(t.date) <= new Date(filters.dateTo),
+        (t) => parseLocalDate(t.date) <= parseLocalDate(filters.dateTo),
       );
     }
     if (filters.search) {
@@ -86,7 +87,7 @@ export default function Transactions() {
 
     switch (filters.sortBy) {
       case 'date_asc':
-        result.sort((a, b) => new Date(a.date) - new Date(b.date));
+        result.sort((a, b) => parseLocalDate(a.date) - parseLocalDate(b.date));
         break;
       case 'amount_desc':
         result.sort((a, b) => b.amount - a.amount);
@@ -100,7 +101,7 @@ export default function Transactions() {
         );
         break;
       default:
-        result.sort((a, b) => new Date(b.date) - new Date(a.date));
+        result.sort((a, b) => parseLocalDate(b.date) - parseLocalDate(a.date));
     }
 
     return result;
@@ -140,21 +141,31 @@ export default function Transactions() {
   const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
   const goToCurrentMonth = () => setCurrentMonth(new Date());
 
+  // Escapa campos para CSV: aspas duplas, separadores e quebras de linha
+  const escapeCsvField = (value) => {
+    const str = String(value ?? '');
+    return /[",;\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+  };
+
   const exportToCSV = () => {
     const headers = ['Data', 'Tipo', 'Categoria', 'Descrição', 'Valor'];
     const rows = filteredTransactions.map((t) => [
-      format(new Date(t.date), 'dd/MM/yyyy', { locale: ptBR }),
+      format(parseLocalDate(t.date), 'dd/MM/yyyy', { locale: ptBR }),
       t.type === 'income' ? 'Receita' : 'Despesa',
       t.category || '',
       t.description || '',
-      t.amount.toString(),
+      Number(t.amount).toFixed(2).replace('.', ','),
     ]);
-    const csv = [headers, ...rows].map((r) => r.join(',')).join('\n');
+    // BOM (\uFEFF) para Excel reconhecer UTF-8; ';' como separador (padrão pt-BR)
+    const csv =
+      '\uFEFF' +
+      [headers, ...rows].map((r) => r.map(escapeCsvField).join(';')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `transacoes-${format(currentMonth, 'yyyy-MM', { locale: ptBR })}.csv`;
     link.click();
+    URL.revokeObjectURL(link.href);
   };
 
   return (
