@@ -2,8 +2,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Trash2,
   Edit,
-  ChevronDown,
-  ChevronUp,
   CreditCard,
   Calendar,
   Clock,
@@ -31,7 +29,6 @@ export default function TransactionList({
   loading,
 }) {
   const [deletingId, setDeletingId] = useState(null);
-  const [expandedId, setExpandedId] = useState(null);
 
   if (loading) {
     return (
@@ -111,7 +108,7 @@ export default function TransactionList({
                   </p>
                 )}
                 <span
-                  className={`font-bold ${transaction.type === 'income' ? 'text-monkey-success' : 'text-monkey-danger'} text-sm sm:text-base whitespace-nowrap'`}
+                  className={`font-bold ${transaction.type === 'income' ? 'text-monkey-success' : 'text-monkey-danger'} text-sm sm:text-base whitespace-nowrap`}
                 >
                   {transaction.type === 'income' ? '+' : '-'}R${' '}
                   {Number(transaction.amount).toLocaleString('pt-BR', {

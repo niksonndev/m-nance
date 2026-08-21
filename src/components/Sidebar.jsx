@@ -8,8 +8,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Wallet,
-  TrendingUp,
-  TrendingDown,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useState } from 'react';

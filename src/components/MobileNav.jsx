@@ -1,4 +1,4 @@
-import { Menu, X, Wallet } from 'lucide-react';
+import { Menu, Wallet } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 
