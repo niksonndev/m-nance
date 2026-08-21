@@ -26,7 +26,7 @@ import PieChart from '../components/PieChart';
 import TransactionList from '../components/TransactionList';
 import TransactionModal from '../components/TransactionModal';
 import Filters from '../components/Filters';
-import { formatCurrency } from '../utils/formatters';
+import { formatCurrency, parseLocalDate } from '../utils/formatters';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -49,7 +49,7 @@ export default function Dashboard() {
 
   const monthlyTransactions = useMemo(() => {
     return transactions.filter((t) => {
-      const date = new Date(t.date);
+      const date = parseLocalDate(t.date);
       return date >= monthStart && date <= monthEnd;
     });
   }, [transactions, monthStart, monthEnd]);
@@ -65,12 +65,12 @@ export default function Dashboard() {
     }
     if (filters.dateFrom) {
       result = result.filter(
-        (t) => new Date(t.date) >= new Date(filters.dateFrom),
+        (t) => parseLocalDate(t.date) >= parseLocalDate(filters.dateFrom),
       );
     }
     if (filters.dateTo) {
       result = result.filter(
-        (t) => new Date(t.date) <= new Date(filters.dateTo),
+        (t) => parseLocalDate(t.date) <= parseLocalDate(filters.dateTo),
       );
     }
     if (filters.search) {
@@ -84,7 +84,7 @@ export default function Dashboard() {
 
     switch (filters.sortBy) {
       case 'date_asc':
-        result.sort((a, b) => new Date(a.date) - new Date(b.date));
+        result.sort((a, b) => parseLocalDate(a.date) - parseLocalDate(b.date));
         break;
       case 'amount_desc':
         result.sort((a, b) => b.amount - a.amount);
@@ -98,7 +98,7 @@ export default function Dashboard() {
         );
         break;
       default:
-        result.sort((a, b) => new Date(b.date) - new Date(a.date));
+        result.sort((a, b) => parseLocalDate(b.date) - parseLocalDate(a.date));
     }
 
     return result;

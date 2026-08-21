@@ -12,6 +12,7 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useState } from 'react';
+import { parseLocalDate } from '../utils/formatters';
 
 const TYPE_LABELS = {
   income: 'Receita',
@@ -122,7 +123,7 @@ export default function TransactionList({
               <div className='flex items-center gap-2 sm:gap-4 mt-2 sm:mt-0 text-xs text-monkey-muted w-full sm:w-auto'>
                 <span className='flex items-center gap-1'>
                   <Calendar className='w-3 h-3' />
-                  {format(new Date(transaction.date), 'dd/MM/yyyy', {
+                  {format(parseLocalDate(transaction.date), 'dd/MM/yyyy', {
                     locale: ptBR,
                   })}
                 </span>
