@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   User,
@@ -41,6 +41,21 @@ export default function Settings() {
     weeklyReport: true,
     monthlyReport: true,
   });
+
+  // Carrega preferências persistidas (por usuário) do localStorage
+  useEffect(() => {
+    if (!user?.id) return;
+    try {
+      const stored = localStorage.getItem(
+        `monkeynanca:notifications:${user.id}`,
+      );
+      if (stored) {
+        setNotifications((prev) => ({ ...prev, ...JSON.parse(stored) }));
+      }
+    } catch (err) {
+      console.error('Erro ao carregar preferências de notificação:', err);
+    }
+  }, [user?.id]);
 
   const showMessage = (type, text) => {
     setMessage({ type, text });
@@ -95,7 +110,18 @@ export default function Settings() {
   };
 
   const handleNotificationChange = (key, value) => {
-    setNotifications((prev) => ({ ...prev, [key]: value }));
+    setNotifications((prev) => {
+      const next = { ...prev, [key]: value };
+      try {
+        localStorage.setItem(
+          `monkeynanca:notifications:${user.id}`,
+          JSON.stringify(next),
+        );
+      } catch (err) {
+        console.error('Erro ao salvar preferências de notificação:', err);
+      }
+      return next;
+    });
     showMessage('success', 'Preferência salva');
   };
 
