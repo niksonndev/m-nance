@@ -50,14 +50,23 @@ export function useTransactions() {
   };
 
   const updateTransaction = async (id, updates) => {
+    if (!user) return { data: null, error: 'Usuário não autenticado' };
+
     try {
       const { data, error } = await supabase
         .from('transactions')
         .update(updates)
         .eq('id', id)
+        .eq('user_id', user.id)
         .select();
 
       if (error) throw error;
+      if (!data?.length) {
+        return {
+          data: null,
+          error: 'Transação não encontrada ou sem permissão',
+        };
+      }
       setTransactions((prev) => prev.map((t) => (t.id === id ? data[0] : t)));
       return { data: data[0], error: null };
     } catch (err) {
@@ -66,11 +75,14 @@ export function useTransactions() {
   };
 
   const deleteTransaction = async (id) => {
+    if (!user) return { error: 'Usuário não autenticado' };
+
     try {
       const { error } = await supabase
         .from('transactions')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user.id);
 
       if (error) throw error;
       setTransactions((prev) => prev.filter((t) => t.id !== id));
