@@ -7,28 +7,12 @@ import {
   Legend,
 } from 'chart.js';
 import { motion } from 'framer-motion';
+import {
+  CATEGORY_COLORS,
+  DEFAULT_CHART_COLORS,
+} from '../constants/categories';
 
 ChartJS.register(CategoryScale, ArcElement, Tooltip, Legend);
-
-const CATEGORY_COLORS = {
-  'Gasto Fixo': '#e74c3c',
-  'Gasto do Dia a Dia': '#f39c12',
-  Investimentos: '#3498db',
-  Outro: '#9b59b6',
-  Salário: '#2ecc71',
-  Bico: '#1abc9c',
-};
-
-const DEFAULT_COLORS = [
-  '#e74c3c',
-  '#f39c12',
-  '#3498db',
-  '#9b59b6',
-  '#2ecc71',
-  '#1abc9c',
-  '#d4a574',
-  '#f4e4c1',
-];
 
 export default function PieChart({
   data,
@@ -52,7 +36,7 @@ export default function PieChart({
 
   const backgroundColors = labels.map(
     (label, index) =>
-      CATEGORY_COLORS[label] || DEFAULT_COLORS[index % DEFAULT_COLORS.length],
+      CATEGORY_COLORS[label] || DEFAULT_CHART_COLORS[index % DEFAULT_CHART_COLORS.length],
   );
 
   const total = data.reduce((a, b) => a + b, 0);

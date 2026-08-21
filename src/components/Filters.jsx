@@ -4,20 +4,6 @@ import { useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-const CATEGORIES = {
-  income: ['Salário', 'Freelance', 'Investimentos', 'Vendas', 'Outros'],
-  expense: [
-    'Alimentação',
-    'Transporte',
-    'Moradia',
-    'Saúde',
-    'Educação',
-    'Lazer',
-    'Compras',
-    'Outros',
-  ],
-};
-
 export default function Filters({
   filters,
   onFiltersChange,

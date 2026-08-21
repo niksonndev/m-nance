@@ -3,11 +3,7 @@ import { X, Save, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
-
-const CATEGORIES = {
-  income: ['Salário', 'Bico', 'Outro'],
-  expense: ['Gasto Fixo', 'Gasto do Dia a Dia', 'Investimentos', 'Outro'],
-};
+import { CATEGORIES } from '../constants/categories';
 
 export default function TransactionModal({
   isOpen,
