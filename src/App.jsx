@@ -1,11 +1,22 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import Transactions from './pages/Transactions';
-import Settings from './pages/Settings';
+
+// Code splitting: cada página é carregada sob demanda
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Transactions = lazy(() => import('./pages/Transactions'));
+const Settings = lazy(() => import('./pages/Settings'));
+
+function PageLoader() {
+  return (
+    <div className='min-h-screen flex items-center justify-center bg-monkey-bg'>
+      <div className='animate-spin rounded-full h-12 w-12 border-4 border-monkey-primary border-t-transparent'></div>
+    </div>
+  );
+}
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -37,7 +48,8 @@ function PublicRoute({ children }) {
 
 function AppRoutes() {
   return (
-    <Routes>
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
       <Route
         path='/login'
         element={
@@ -67,7 +79,8 @@ function AppRoutes() {
       </Route>
       <Route path='/' element={<Navigate to='/dashboard' replace />} />
       <Route path='*' element={<Navigate to='/dashboard' replace />} />
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 }
 
