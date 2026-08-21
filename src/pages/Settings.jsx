@@ -2,10 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   User,
-  Mail,
   Lock,
   Bell,
-  CreditCard,
   Trash2,
   Loader2,
   Save,

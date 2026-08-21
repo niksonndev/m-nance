@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Filter, X, Calendar, ChevronDown } from 'lucide-react';
+import { Filter, X, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -7,12 +7,10 @@ import { ptBR } from 'date-fns/locale';
 export default function Filters({
   filters,
   onFiltersChange,
-  onClearFilters,
   transactions = [],
   loading = false,
 }) {
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [dateRangeOpen, setDateRangeOpen] = useState(false);
 
   const allCategories = [
     ...new Set(transactions.map((t) => t.category).filter(Boolean)),

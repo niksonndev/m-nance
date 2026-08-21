@@ -12,7 +12,7 @@ export function formatDate(date) {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
-  }).format(new Date(date));
+  }).format(parseLocalDate(date));
 }
 
 export function formatDateTime(date) {
@@ -23,7 +23,7 @@ export function formatDateTime(date) {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(new Date(date));
+  }).format(parseLocalDate(date));
 }
 
 export function formatPercentage(value) {

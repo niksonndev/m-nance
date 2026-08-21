@@ -30,6 +30,17 @@ export default function TransactionList({
 }) {
   const [deletingId, setDeletingId] = useState(null);
 
+  // Confirmação fica a cargo da página (onDelete); aqui apenas
+  // mostramos o spinner enquanto a exclusão está em andamento.
+  const handleDeleteClick = async (id) => {
+    setDeletingId(id);
+    try {
+      await onDelete(id);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className='space-y-3'>
@@ -151,7 +162,7 @@ export default function TransactionList({
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                onClick={() => setDeletingId(transaction.id)}
+                onClick={() => handleDeleteClick(transaction.id)}
                 disabled={deletingId === transaction.id}
                 className='p-2 rounded-lg text-monkey-muted hover:bg-monkey-danger/10 hover:text-monkey-danger transition-colors'
                 aria-label='Excluir transação'
