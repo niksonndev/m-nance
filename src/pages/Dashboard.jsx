@@ -167,8 +167,8 @@ export default function Dashboard() {
                 Transações do mês
               </h2>
               <span className='text-sm text-monkey-muted'>
-                {filteredTransactions.length} transação
-                {filteredTransactions.length !== 1 ? 'ões' : ''}
+                {filteredTransactions.length}{' '}
+                {filteredTransactions.length === 1 ? 'transação' : 'transações'}
               </span>
             </div>
             <TransactionList
