@@ -19,7 +19,9 @@ export default class ErrorBoundary extends Component {
   }
 
   handleReload = () => {
-    window.location.href = '/dashboard';
+    // BASE_URL do Vite: o app pode estar numa subpasta (GitHub Pages), então
+    // um '/dashboard' absoluto cairia fora do app.
+    window.location.href = `${import.meta.env.BASE_URL}dashboard`;
   };
 
   render() {

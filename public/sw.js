@@ -51,13 +51,13 @@ async function precache() {
   const cache = await caches.open(cacheName);
 
   // addAll falha inteiro se um único arquivo falhar; aqui cada asset é
-  // opcional, para o app não ficar sem SW por causa de um 404.
+  // opcional, para o app não ficar sem SW por causa de um 404. Os caminhos do
+  // manifesto são relativos à base, então resolvem contra o scope do SW tanto
+  // na raiz quanto em subpasta (GitHub Pages).
   await Promise.all(
     assets.map(async (asset) => {
       try {
-        await cache.add(
-          new Request(scopeUrl(asset.slice(1)), { cache: 'reload' }),
-        );
+        await cache.add(new Request(scopeUrl(asset), { cache: 'reload' }));
       } catch (error) {
         console.warn('[sw] não foi possível pré-cachear', asset, error);
       }
