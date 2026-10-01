@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="MonkeyNança">
-  <rect width="64" height="64" rx="14" fill="#1a1a2e"/>
-  <rect x="19" y="16" width="26" height="10" rx="3" fill="#f4e4c1"/>
-  <rect x="11" y="23" width="42" height="27" rx="7" fill="#d4a574"/>
-  <path d="M11 39h42v4a7 7 0 0 1-7 7H18a7 7 0 0 1-7-7z" fill="#a87c4a"/>
-  <circle cx="43" cy="31" r="4" fill="#1a1a2e"/>
-  <circle cx="43" cy="31" r="1.8" fill="#d4a574"/>
-</svg>

@@ -47,7 +47,8 @@ for (const file of [
   'sw.js',
   'manifest.webmanifest',
   'precache-manifest.json',
-  'favicon.svg',
+  'icons/favicon-32.png',
+  'icons/favicon-16.png',
 ]) {
   if (!existsSync(join(DIST, file))) problems.push(`faltando no build: ${file}`);
 }
