@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:
+
+# Um run por branch: pushes em sequência cancelam o anterior em vez de
+# acumular runners.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualidade:
+    name: Lint, testes, build e PWA
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar o pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Instalar o Node
+        uses: actions/setup-node@v4
+        with:
+          # Node 22 (LTS): atende os engines do eslint 10 e do jsdom 30, que
+          # pedem ^20.19 || ^22.13 || >=24.
+          node-version: 22
+          cache: pnpm
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Testes
+        run: pnpm test
+
+      # As VITE_* são embutidas no bundle pelo Vite: não são segredo de
+      # verdade, mas ficam em secrets para não versionar credencial nenhuma.
+      # Sem elas o build passa, porém o app sobe sem conectar no Supabase.
+      - name: Build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
+            echo "::warning title=Credenciais do Supabase ausentes::Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY em Settings > Secrets and variables > Actions. O app foi compilado sem credenciais e não vai conectar no banco."
+          fi
+          pnpm build
+
+      - name: Validar o PWA gerado
+        run: node scripts/check-pwa.mjs
+
+      - name: Publicar o dist como artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
