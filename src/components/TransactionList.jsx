@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Trash2, Edit, CreditCard, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useCurrency } from '../context/CurrencyContext';
 import {
   agruparPorDia,
@@ -33,6 +33,14 @@ export default function TransactionList({
 }) {
   const [deletingId, setDeletingId] = useState(null);
   const { formatValue } = useCurrency();
+
+  // Índice de cada lançamento na lista plana, usado para escalonar a animação
+  // de entrada sem mutar um contador durante o render (react-hooks/immutability).
+  const indicePorId = useMemo(() => {
+    const indice = new Map();
+    (transactions ?? []).forEach((t, i) => indice.set(t.id, i));
+    return indice;
+  }, [transactions]);
 
   // Confirmação fica a cargo da página (onDelete); aqui apenas
   // mostramos o spinner enquanto a exclusão está em andamento.
@@ -86,8 +94,6 @@ export default function TransactionList({
     );
   }
 
-  let indice = 0;
-
   return (
     <div className='space-y-4'>
       {agruparPorDia(transactions).map((grupo) => {
@@ -116,14 +122,17 @@ export default function TransactionList({
                   ? `Criado em ${format(new Date(transaction.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`
                   : undefined;
 
-                indice += 1;
-
                 return (
                   <motion.div
                     key={transaction.id}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: Math.min(indice * 0.02, 0.15) }}
+                    transition={{
+                      delay: Math.min(
+                        (indicePorId.get(transaction.id) ?? 0) * 0.02,
+                        0.15,
+                      ),
+                    }}
                     title={horario}
                     className='flex items-center gap-3 py-3'
                   >
