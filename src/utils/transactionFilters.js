@@ -43,10 +43,10 @@ export function filterAndSortTransactions(transactions, filters) {
       result.sort((a, b) => parseLocalDate(a.date) - parseLocalDate(b.date));
       break;
     case 'amount_desc':
-      result.sort((a, b) => b.amount - a.amount);
+      result.sort((a, b) => Number(b.amount) - Number(a.amount));
       break;
     case 'amount_asc':
-      result.sort((a, b) => a.amount - b.amount);
+      result.sort((a, b) => Number(a.amount) - Number(b.amount));
       break;
     case 'category':
       result.sort((a, b) =>

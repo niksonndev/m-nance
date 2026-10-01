@@ -92,4 +92,26 @@ describe('filterAndSortTransactions', () => {
     const result = filterAndSortTransactions(txs, {});
     expect(result.map((t) => t.id)).toEqual([3, 1, 2]);
   });
+
+  it('ordena por valor mesmo com amount vindo como string (numeric do Postgres)', () => {
+    const comoString = txs.map((t) => ({ ...t, amount: String(t.amount) }));
+    const result = filterAndSortTransactions(comoString, {
+      sortBy: 'amount_desc',
+    });
+    expect(result.map((t) => t.id)).toEqual([2, 1, 3]);
+  });
+
+  it('preserva a ordenação escolhida quando a busca é limpa com os outros filtros', () => {
+    const result = filterAndSortTransactions(txs, {
+      type: '',
+      category: '',
+      dateFrom: '',
+      dateTo: '',
+      search: '',
+      minAmount: '',
+      maxAmount: '',
+      sortBy: 'amount_asc',
+    });
+    expect(result.map((t) => t.id)).toEqual([3, 1, 2]);
+  });
 });

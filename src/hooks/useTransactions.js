@@ -92,12 +92,14 @@ export function useTransactions() {
     }
   };
 
-  const getSummary = (txs = transactions) => {
+  // useCallback: mantém a identidade estável entre renders, senão os useMemo
+  // das páginas (que dependem destas funções) recalculam a cada render.
+  const getSummary = useCallback((txs = transactions) => {
     const income = txs
       .filter((t) => t.type === 'income')
       .reduce((sum, t) => sum + Number(t.amount), 0);
 
-    const expenses = txs // ← mudei o nome da variável
+    const expenses = txs
       .filter((t) => t.type === 'expense')
       .reduce((sum, t) => sum + Number(t.amount), 0);
 
@@ -106,9 +108,9 @@ export function useTransactions() {
       expenses,
       balance: income - expenses,
     };
-  };
+  }, [transactions]);
 
-  const getCategorySummary = (type, txs = transactions) => {
+  const getCategorySummary = useCallback((type, txs = transactions) => {
     return txs
       .filter((t) => t.type === type)
       .reduce((acc, t) => {
@@ -116,7 +118,7 @@ export function useTransactions() {
         acc[category] = (acc[category] || 0) + Number(t.amount);
         return acc;
       }, {});
-  };
+  }, [transactions]);
 
   return {
     transactions,

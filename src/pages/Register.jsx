@@ -12,11 +12,13 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setInfo('');
 
     if (password !== confirmPassword) {
       setError('As senhas não coincidem');
@@ -31,8 +33,17 @@ export default function Register() {
     setLoading(true);
 
     try {
-      const { error } = await signUp(email, password);
+      const { data, error } = await signUp(email, password);
       if (error) throw error;
+      // Com a confirmação de e-mail ligada no Supabase, o signUp não devolve
+      // sessão: sem este aviso o usuário era jogado para /dashboard e voltava
+      // para o login sem entender o motivo.
+      if (!data?.session) {
+        setInfo(
+          `Conta criada! Confirme o link enviado para ${email} para entrar.`,
+        );
+        return;
+      }
       navigate('/dashboard');
     } catch (err) {
       setError(err.message || 'Erro ao criar conta');
@@ -68,6 +79,16 @@ export default function Register() {
           className='card'
         >
           <form onSubmit={handleSubmit} className='space-y-6'>
+            {info && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className='p-3 bg-monkey-success/10 border border-monkey-success/20 rounded-lg text-sm text-monkey-success'
+              >
+                {info}
+              </motion.div>
+            )}
+
             {error && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}

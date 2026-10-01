@@ -22,10 +22,13 @@ export default function Settings() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
-  const [profileData, setProfileData] = useState({
-    fullName: '',
+  // Inicializado a partir dos metadados do usuário: o nome salvo em
+  // auth.updateUser({ data: { full_name } }) precisa voltar ao formulário ao
+  // reabrir a tela (antes ficava sempre vazio, mesmo depois de salvo).
+  const [profileData, setProfileData] = useState(() => ({
+    fullName: user?.user_metadata?.full_name || '',
     email: user?.email || '',
-  });
+  }));
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',

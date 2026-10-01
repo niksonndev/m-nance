@@ -3,10 +3,12 @@ import { Filter, X, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { parseLocalDate } from '../utils/formatters';
 
 export default function Filters({
   filters,
   onFiltersChange,
+  onClearFilters,
   transactions = [],
   loading = false,
 }) {
@@ -21,15 +23,26 @@ export default function Filters({
     filters.category ||
     filters.dateFrom ||
     filters.dateTo ||
-    filters.search;
+    filters.search ||
+    filters.minAmount ||
+    filters.maxAmount;
 
+  // A limpeza completa (incluindo ordenação e faixa de valor) vem da página;
+  // sem o prop, cai num reset local que preserva a ordenação escolhida.
   const handleClearFilters = () => {
+    if (onClearFilters) {
+      onClearFilters();
+      return;
+    }
     onFiltersChange({
+      ...filters,
       type: '',
       category: '',
       dateFrom: '',
       dateTo: '',
       search: '',
+      minAmount: '',
+      maxAmount: '',
     });
   };
 
@@ -249,7 +262,7 @@ export default function Filters({
             {filters.dateFrom && (
               <span className='px-2 py-1 text-xs bg-monkey-primary/20 text-monkey-primary rounded'>
                 De:{' '}
-                {format(new Date(filters.dateFrom), 'dd/MM/yyyy', {
+                {format(parseLocalDate(filters.dateFrom), 'dd/MM/yyyy', {
                   locale: ptBR,
                 })}
               </span>
@@ -257,7 +270,7 @@ export default function Filters({
             {filters.dateTo && (
               <span className='px-2 py-1 text-xs bg-monkey-primary/20 text-monkey-primary rounded'>
                 Até:{' '}
-                {format(new Date(filters.dateTo), 'dd/MM/yyyy', {
+                {format(parseLocalDate(filters.dateTo), 'dd/MM/yyyy', {
                   locale: ptBR,
                 })}
               </span>

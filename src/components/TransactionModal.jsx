@@ -1,9 +1,11 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Save, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { addMonths, addWeeks, format } from 'date-fns';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { CATEGORIES } from '../constants/categories';
+import { parseLocalDate } from '../utils/formatters';
 
 export default function TransactionModal({
   isOpen,
@@ -109,26 +111,37 @@ export default function TransactionModal({
 
       // Se for recorrente, salva na tabela recurring_transactions
       if (formData.is_recurring && !transaction) {
-        const nextDate = new Date(formData.date);
-        if (formData.recurring_frequency === 'monthly') {
-          nextDate.setMonth(nextDate.getMonth() + 1);
-        } else {
-          nextDate.setDate(nextDate.getDate() + 7);
-        }
+        // parseLocalDate evita o deslocamento de um dia (yyyy-mm-dd é lido
+        // como UTC pelo new Date); addMonths/addWeeks tratam o fim de mês
+        // (ex.: 31/01 + 1 mês = 28/02) sem estourar para o mês seguinte.
+        const baseDate = parseLocalDate(formData.date);
+        const nextDate =
+          formData.recurring_frequency === 'monthly'
+            ? addMonths(baseDate, 1)
+            : addWeeks(baseDate, 1);
 
-        await supabase.from('recurring_transactions').insert([
-          {
-            user_id: user.id,
-            type: formData.type,
-            amount: parseFloat(formData.amount),
-            currency: formData.currency,
-            category: formData.category,
-            description: formData.description,
-            frequency: formData.recurring_frequency,
-            next_date: nextDate.toISOString().split('T')[0],
-            active: true,
-          },
-        ]);
+        const { error: recurringError } = await supabase
+          .from('recurring_transactions')
+          .insert([
+            {
+              user_id: user.id,
+              type: formData.type,
+              amount: parseFloat(formData.amount),
+              currency: formData.currency,
+              category: formData.category,
+              description: formData.description,
+              frequency: formData.recurring_frequency,
+              next_date: format(nextDate, 'yyyy-MM-dd'),
+              active: true,
+            },
+          ]);
+
+        // Não bloqueia o fluxo: a transação principal já foi salva. A falha
+        // fica registrada para diagnóstico (a tela não lê a tabela de
+        // recorrências — ver observação no relatório de revisão).
+        if (recurringError) {
+          console.error('Erro ao salvar transação recorrente:', recurringError);
+        }
       }
 
       onSuccess();
