@@ -10,10 +10,13 @@ import {
   AlertCircle,
   CheckCircle,
   LogOut,
+  Repeat,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabaseClient';
+import { useRecurring } from '../hooks/useRecurring';
+import { formatCurrency, formatDate } from '../utils/formatters';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -21,6 +24,14 @@ export default function Settings() {
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [encerrandoId, setEncerrandoId] = useState(null);
+
+  const {
+    recorrencias,
+    loading: loadingRecorrencias,
+    error: erroRecorrencias,
+    encerrarRecorrencia,
+  } = useRecurring();
 
   // Inicializado a partir dos metadados do usuário: o nome salvo em
   // auth.updateUser({ data: { full_name } }) precisa voltar ao formulário ao
@@ -171,9 +182,34 @@ export default function Settings() {
   const tabs = [
     { id: 'profile', label: 'Perfil', icon: User },
     { id: 'security', label: 'Segurança', icon: Lock },
+    { id: 'recurring', label: 'Recorrências', icon: Repeat },
     { id: 'notifications', label: 'Notificações', icon: Bell },
     { id: 'danger', label: 'Zona de perigo', icon: AlertCircle },
   ];
+
+  /**
+   * Encerra a recorrência: para de gerar lançamentos futuros. Os lançamentos já
+   * criados ficam no histórico — a regra é desativada, não apagada.
+   */
+  const handleEncerrarRecorrencia = async (recorrencia) => {
+    if (
+      !window.confirm(
+        'Encerrar esta recorrência? Nenhum lançamento novo será gerado (os que já existem continuam no histórico).',
+      )
+    ) {
+      return;
+    }
+
+    setEncerrandoId(recorrencia.id);
+    const { error } = await encerrarRecorrencia(recorrencia.id);
+    setEncerrandoId(null);
+
+    if (error) {
+      showMessage('error', error);
+      return;
+    }
+    showMessage('success', 'Recorrência encerrada');
+  };
 
   return (
     <div className='space-y-6'>
@@ -212,7 +248,7 @@ export default function Settings() {
 
       <div className='card'>
         <div className='border-b border-monkey-muted/30'>
-          <nav className='flex gap-1 p-1' aria-label='Configurações'>
+          <nav className='flex gap-1 p-1 overflow-x-auto' aria-label='Configurações'>
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -222,7 +258,7 @@ export default function Settings() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex-shrink-0 ${
                     isActive
                       ? 'bg-monkey-primary/20 text-monkey-primary'
                       : 'text-monkey-muted hover:text-monkey-text hover:bg-monkey-muted/10'
@@ -428,6 +464,130 @@ export default function Settings() {
                   )}
                 </motion.button>
               </form>
+            </motion.div>
+          )}
+
+          {activeTab === 'recurring' && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className='space-y-4 max-w-2xl'
+            >
+              <div>
+                <h3 className='text-lg font-semibold text-monkey-text mb-2'>
+                  Recorrências ativas
+                </h3>
+                <p className='text-monkey-muted text-sm'>
+                  Lançamentos que se repetem sozinhos. Ao abrir o app, as
+                  ocorrências já vencidas — inclusive de meses em que você não
+                  entrou — entram automaticamente na sua lista.
+                </p>
+              </div>
+
+              {loadingRecorrencias && (
+                <div className='flex items-center gap-2 text-monkey-muted text-sm py-2'>
+                  <Loader2 className='w-4 h-4 animate-spin' />
+                  Carregando recorrências...
+                </div>
+              )}
+
+              {!loadingRecorrencias && erroRecorrencias && (
+                <p className='text-sm text-monkey-danger bg-monkey-danger/10 border border-monkey-danger/20 p-3 rounded-lg'>
+                  {erroRecorrencias}
+                </p>
+              )}
+
+              {!loadingRecorrencias &&
+                !erroRecorrencias &&
+                recorrencias.length === 0 && (
+                  <div className='card flex flex-col items-center justify-center py-10 text-center'>
+                    <div className='w-14 h-14 bg-monkey-muted/10 rounded-full flex items-center justify-center mb-3'>
+                      <Repeat className='w-7 h-7 text-monkey-muted' />
+                    </div>
+                    <h4 className='font-medium text-monkey-text mb-1'>
+                      Nenhuma recorrência ativa
+                    </h4>
+                    <p className='text-sm text-monkey-muted max-w-sm'>
+                      Ao criar uma transação, marque “Transação recorrente” para
+                      que ela se repita toda semana ou todo mês.
+                    </p>
+                  </div>
+                )}
+
+              {!loadingRecorrencias &&
+                recorrencias.map((recorrencia) => (
+                  <div
+                    key={recorrencia.id}
+                    className='card flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3'
+                  >
+                    <div
+                      className={`w-2 h-full rounded-full ${
+                        recorrencia.type === 'income'
+                          ? 'bg-monkey-success'
+                          : 'bg-monkey-danger'
+                      }`}
+                    />
+
+                    <div className='flex-1 min-w-0'>
+                      <div className='flex items-center gap-2 flex-wrap'>
+                        <span className='font-medium text-monkey-text truncate'>
+                          {recorrencia.category || 'Sem categoria'}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                            recorrencia.type === 'income'
+                              ? 'text-monkey-success bg-monkey-success/10'
+                              : 'text-monkey-danger bg-monkey-danger/10'
+                          }`}
+                        >
+                          {recorrencia.type === 'income' ? 'Receita' : 'Despesa'}
+                        </span>
+                        <span className='px-2 py-0.5 text-xs font-medium rounded-full bg-monkey-primary/20 text-monkey-primary'>
+                          {recorrencia.frequency === 'weekly'
+                            ? 'Semanal'
+                            : 'Mensal'}
+                        </span>
+                      </div>
+
+                      {recorrencia.description && (
+                        <p className='text-sm text-monkey-muted truncate mt-1'>
+                          {recorrencia.description}
+                        </p>
+                      )}
+
+                      <p className='text-xs text-monkey-muted mt-1'>
+                        Próximo lançamento: {formatDate(recorrencia.next_date)}
+                      </p>
+                    </div>
+
+                    <div className='flex items-center justify-between sm:justify-end gap-3'>
+                      <span
+                        className={`font-bold whitespace-nowrap ${
+                          recorrencia.type === 'income'
+                            ? 'text-monkey-success'
+                            : 'text-monkey-danger'
+                        }`}
+                      >
+                        {recorrencia.type === 'income' ? '+' : '-'}
+                        {formatCurrency(Number(recorrencia.amount))}
+                      </span>
+
+                      <button
+                        type='button'
+                        onClick={() => handleEncerrarRecorrencia(recorrencia)}
+                        disabled={encerrandoId === recorrencia.id}
+                        className='flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-monkey-danger bg-monkey-danger/10 border border-monkey-danger/20 hover:bg-monkey-danger/20 transition-colors disabled:opacity-60'
+                      >
+                        {encerrandoId === recorrencia.id ? (
+                          <Loader2 className='w-4 h-4 animate-spin' />
+                        ) : (
+                          <Trash2 className='w-4 h-4' />
+                        )}
+                        Encerrar
+                      </button>
+                    </div>
+                  </div>
+                ))}
             </motion.div>
           )}
 

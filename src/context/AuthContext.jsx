@@ -6,6 +6,7 @@ import {
   useCallback,
 } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { limparCacheRecorrencias } from '../hooks/useRecurring';
 
 const AuthContext = createContext(null);
 
@@ -55,6 +56,9 @@ export function AuthProvider({ children }) {
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
+    // Limpa a trava de geração por sessão: quem entrar em seguida (ou o mesmo
+    // usuário mais tarde) precisa materializar as recorrências de novo.
+    limparCacheRecorrencias();
     return { error };
   };
 

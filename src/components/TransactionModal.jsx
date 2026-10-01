@@ -349,39 +349,51 @@ export default function TransactionModal({
                 )}
               </div>
 
-              {/* Recorrência */}
-              <div className='flex items-center gap-3 p-3 bg-monkey-bg rounded-lg border border-monkey-muted/20'>
-                <input
-                  id='is_recurring'
-                  name='is_recurring'
-                  type='checkbox'
-                  checked={formData.is_recurring}
-                  onChange={handleChange}
-                  className='w-4 h-4 rounded border-monkey-muted bg-monkey-card text-monkey-primary focus:ring-monkey-primary'
-                />
-                <div className='flex-1'>
-                  <label
-                    htmlFor='is_recurring'
-                    className='text-sm font-medium text-monkey-text cursor-pointer'
-                  >
-                    Transação recorrente
-                  </label>
-                  <p className='text-xs text-monkey-muted'>
-                    Repetir automaticamente
+              {/* Recorrência: só se cria no cadastro. Ao editar, a transação
+                  não tem vínculo com a regra, então marcar aqui não criaria
+                  nada — em vez de um no-op silencioso, explicamos onde gerir. */}
+              {transaction ? (
+                transaction.is_recurring && (
+                  <p className='text-xs text-monkey-muted bg-monkey-bg rounded-lg border border-monkey-muted/20 p-3'>
+                    Esta transação é recorrente. As repetições são lançadas ao
+                    abrir o app e podem ser encerradas em Configurações →
+                    Recorrências.
                   </p>
-                </div>
-                {formData.is_recurring && (
-                  <select
-                    name='recurring_frequency'
-                    value={formData.recurring_frequency}
+                )
+              ) : (
+                <div className='flex items-center gap-3 p-3 bg-monkey-bg rounded-lg border border-monkey-muted/20'>
+                  <input
+                    id='is_recurring'
+                    name='is_recurring'
+                    type='checkbox'
+                    checked={formData.is_recurring}
                     onChange={handleChange}
-                    className='input-field w-32 text-sm py-1'
-                  >
-                    <option value='monthly'>Mensal</option>
-                    <option value='weekly'>Semanal</option>
-                  </select>
-                )}
-              </div>
+                    className='w-4 h-4 rounded border-monkey-muted bg-monkey-card text-monkey-primary focus:ring-monkey-primary'
+                  />
+                  <div className='flex-1'>
+                    <label
+                      htmlFor='is_recurring'
+                      className='text-sm font-medium text-monkey-text cursor-pointer'
+                    >
+                      Transação recorrente
+                    </label>
+                    <p className='text-xs text-monkey-muted'>
+                      Repetir automaticamente
+                    </p>
+                  </div>
+                  {formData.is_recurring && (
+                    <select
+                      name='recurring_frequency'
+                      value={formData.recurring_frequency}
+                      onChange={handleChange}
+                      className='input-field w-32 text-sm py-1'
+                    >
+                      <option value='monthly'>Mensal</option>
+                      <option value='weekly'>Semanal</option>
+                    </select>
+                  )}
+                </div>
+              )}
 
               {/* Botões */}
               <div className='flex gap-3 pt-2'>

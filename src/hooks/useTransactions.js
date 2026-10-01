@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from './useAuth';
+import { materializeRecurrences } from './useRecurring';
 
 export function useTransactions() {
   const [transactions, setTransactions] = useState([]);
@@ -31,6 +32,27 @@ export function useTransactions() {
   useEffect(() => {
     fetchTransactions();
   }, [fetchTransactions]);
+
+  // Antes de manter a lista, gera os lançamentos das recorrências vencidas:
+  // roda uma vez por sessão/usuário (trava em materializeRecurrences) e, se
+  // algo foi criado, recarrega para os novos lançamentos já aparecerem.
+  useEffect(() => {
+    if (!user?.id) return undefined;
+
+    let cancelado = false;
+
+    materializeRecurrences(user.id).then(({ criadas, error: erro }) => {
+      if (erro) {
+        console.error('Erro ao gerar recorrências vencidas:', erro);
+        return;
+      }
+      if (!cancelado && criadas > 0) fetchTransactions();
+    });
+
+    return () => {
+      cancelado = true;
+    };
+  }, [user?.id, fetchTransactions]);
 
   const addTransaction = async (transaction) => {
     if (!user) return { error: 'Usuário não autenticado' };
