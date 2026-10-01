@@ -11,3 +11,8 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
+
+// A anon key e a URL são públicas por natureza (vão no bundle), mas ficam aqui
+// centralizadas para quem precisa falar direto com a API de auth, como a
+// checagem de provedores habilitados em AuthContext.
+export { supabaseUrl, supabaseKey };

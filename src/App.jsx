@@ -5,7 +5,6 @@ import Layout from './components/Layout';
 
 // Code splitting: cada página é carregada sob demanda
 const Login = lazy(() => import('./pages/Login'));
-const Register = lazy(() => import('./pages/Register'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Transactions = lazy(() => import('./pages/Transactions'));
 const Settings = lazy(() => import('./pages/Settings'));
@@ -55,14 +54,6 @@ function AppRoutes() {
         element={
           <PublicRoute>
             <Login />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path='/register'
-        element={
-          <PublicRoute>
-            <Register />
           </PublicRoute>
         }
       />

@@ -5,7 +5,7 @@ import {
   useEffect,
   useCallback,
 } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { supabase, supabaseUrl, supabaseKey } from '../lib/supabaseClient';
 import { limparCacheRecorrencias } from '../hooks/useRecurring';
 
 const AuthContext = createContext(null);
@@ -41,15 +41,39 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe();
   }, [fetchUser]);
 
-  const signUp = async (email, password) => {
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    return { data, error };
-  };
+  /**
+   * Login exclusivamente via Google. O app é uma SPA estática sem backend, e o
+   * OAuth é resolvido no Supabase: ele devolve a sessão no hash da URL de volta
+   * (detectSessionInUrl), que o supabase-js troca por sessão automaticamente.
+   */
+  const signInWithGoogle = async () => {
+    // Sem o provedor habilitado no Supabase, o OAuth devolve uma página JSON
+    // crua (o usuário sai do app e não entende nada). A lista de provedores é
+    // pública, então checamos antes de mandar o navegador para lá.
+    try {
+      const resposta = await fetch(`${supabaseUrl}/auth/v1/settings`, {
+        headers: { apikey: supabaseKey },
+      });
+      const settings = await resposta.json();
 
-  const signIn = async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+      if (settings?.external?.google !== true) {
+        return {
+          data: null,
+          error: { message: 'provider is not enabled: google' },
+        };
+      }
+    } catch (erro) {
+      // Não deu para checar (rede/offline): segue para o OAuth e deixa o
+      // Supabase responder.
+      console.warn('Não foi possível verificar os provedores de login:', erro);
+    }
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        // Volta para a raiz do app, respeitando a base (/m-nance/ no Pages).
+        redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}`,
+      },
     });
     return { data, error };
   };
@@ -65,8 +89,7 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     loading,
-    signUp,
-    signIn,
+    signInWithGoogle,
     signOut,
     refreshUser: fetchUser,
   };

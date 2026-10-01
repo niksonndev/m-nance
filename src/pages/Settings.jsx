@@ -41,12 +41,6 @@ export default function Settings() {
     email: user?.email || '',
   }));
 
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
-
   const [notifications, setNotifications] = useState({
     emailNotifications: true,
     pushNotifications: false,
@@ -84,36 +78,6 @@ export default function Settings() {
       if (error) throw error;
       await refreshUser();
       showMessage('success', 'Perfil atualizado com sucesso!');
-    } catch (error) {
-      showMessage('error', error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePasswordUpdate = async (e) => {
-    e.preventDefault();
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      showMessage('error', 'As senhas não coincidem');
-      return;
-    }
-    if (passwordData.newPassword.length < 6) {
-      showMessage('error', 'A nova senha deve ter pelo menos 6 caracteres');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.updateUser({
-        password: passwordData.newPassword,
-      });
-      if (error) throw error;
-      setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      });
-      showMessage('success', 'Senha alterada com sucesso!');
     } catch (error) {
       showMessage('error', error.message);
     } finally {
@@ -366,104 +330,27 @@ export default function Settings() {
             >
               <div>
                 <h3 className='text-lg font-semibold text-monkey-text mb-2'>
-                  Alterar senha
+                  Como você entra
                 </h3>
-                <p className='text-monkey-muted text-sm mb-4'>
-                  Sua senha atual será necessária para confirmar a alteração
+                <p className='text-monkey-muted text-sm'>
+                  O MonkeyNança usa somente o login do Google: não existe senha
+                  própria do app para criar, trocar ou esquecer.
                 </p>
               </div>
 
-              <form onSubmit={handlePasswordUpdate} className='space-y-4'>
-                <div>
-                  <label
-                    htmlFor='currentPassword'
-                    className='block text-sm font-medium text-monkey-text mb-2'
-                  >
-                    Senha atual
-                  </label>
-                  <input
-                    id='currentPassword'
-                    type='password'
-                    value={passwordData.currentPassword}
-                    onChange={(e) =>
-                      setPasswordData((prev) => ({
-                        ...prev,
-                        currentPassword: e.target.value,
-                      }))
-                    }
-                    className='input-field'
-                    placeholder='••••••••'
-                    required
-                  />
+              <div className='flex items-start gap-3 p-4 bg-monkey-muted/10 border border-monkey-muted/20 rounded-lg'>
+                <Lock className='w-5 h-5 text-monkey-primary flex-shrink-0 mt-0.5' />
+                <div className='text-sm text-monkey-muted'>
+                  <p className='text-monkey-text font-medium mb-1'>
+                    Conta conectada
+                  </p>
+                  <p className='truncate'>{user?.email}</p>
+                  <p className='mt-2'>
+                    Para trocar a senha, revisar dispositivos ou remover o
+                    acesso deste app, use as configurações da sua Conta Google.
+                  </p>
                 </div>
-
-                <div>
-                  <label
-                    htmlFor='newPassword'
-                    className='block text-sm font-medium text-monkey-text mb-2'
-                  >
-                    Nova senha
-                  </label>
-                  <input
-                    id='newPassword'
-                    type='password'
-                    value={passwordData.newPassword}
-                    onChange={(e) =>
-                      setPasswordData((prev) => ({
-                        ...prev,
-                        newPassword: e.target.value,
-                      }))
-                    }
-                    className='input-field'
-                    placeholder='••••••••'
-                    minLength={6}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor='confirmPassword'
-                    className='block text-sm font-medium text-monkey-text mb-2'
-                  >
-                    Confirmar nova senha
-                  </label>
-                  <input
-                    id='confirmPassword'
-                    type='password'
-                    value={passwordData.confirmPassword}
-                    onChange={(e) =>
-                      setPasswordData((prev) => ({
-                        ...prev,
-                        confirmPassword: e.target.value,
-                      }))
-                    }
-                    className='input-field'
-                    placeholder='••••••••'
-                    required
-                  />
-                </div>
-
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  type='submit'
-                  disabled={loading}
-                  className='w-full btn-primary py-3 flex items-center justify-center gap-2'
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className='w-5 h-5 animate-spin' />
-                      Alterando...
-                    </>
-                  ) : (
-                    <>
-                      <Lock className='w-5 h-5' />
-                      Alterar senha
-                    </>
-                  )}
-                </motion.button>
-              </form>
+              </div>
             </motion.div>
           )}
 
