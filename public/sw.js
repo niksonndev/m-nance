@@ -122,7 +122,9 @@ async function networkFirstNavigation(request) {
     // Resposta de erro do host (ex.: 404 em /settings sem rewrite de SPA):
     // serve o app shell em vez da página de erro.
     if (!response.ok) {
-      const shell = await caches.match(scopeUrl(FALLBACK_URL));
+      const shell = await caches.match(scopeUrl(FALLBACK_URL), {
+        ignoreVary: true,
+      });
       if (shell) return shell;
     }
 
@@ -130,8 +132,8 @@ async function networkFirstNavigation(request) {
     return response;
   } catch (error) {
     const cached =
-      (await caches.match(scopeUrl(FALLBACK_URL))) ||
-      (await caches.match(request));
+      (await caches.match(scopeUrl(FALLBACK_URL), { ignoreVary: true })) ||
+      (await caches.match(request, { ignoreVary: true }));
     if (cached) return cached;
 
     return new Response(OFFLINE_PAGE, {
@@ -143,7 +145,12 @@ async function networkFirstNavigation(request) {
 
 async function staleWhileRevalidate(request) {
   const cache = await activeCache();
-  const cached = await cache.match(request);
+
+  // ignoreVary é obrigatório aqui: o host responde "Vary: Origin" e o Chrome
+  // envia Origin nos assets carregados com crossorigin (script/stylesheet do
+  // build). Comparando o Vary, o match erra o alvo e o app fica sem JS/CSS
+  // offline — foi exatamente o que acontecia antes desta correção.
+  const cached = await cache.match(request, { ignoreVary: true });
 
   const network = fetch(request)
     .then((response) => {
