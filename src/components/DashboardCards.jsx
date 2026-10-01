@@ -1,6 +1,6 @@
 import { Wallet, TrendingUp, TrendingDown } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { formatCurrency } from '../utils/formatters';
+import { useCurrency } from '../context/CurrencyContext';
 
 const cards = [
   {
@@ -30,6 +30,8 @@ const cards = [
 ];
 
 export default function DashboardCards({ stats }) {
+  const { formatValue } = useCurrency();
+
   return (
     <div className='grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4'>
       {cards.map((card, index) => (
@@ -54,11 +56,11 @@ export default function DashboardCards({ stats }) {
                   : 'text-monkey-text'
               }`}
             >
-              {card.value === 'balance' && formatCurrency(stats.balance)}
+              {card.value === 'balance' && formatValue(stats.balance)}
               {card.value === 'income' &&
-                `${card.prefix}${formatCurrency(stats.income)}`}
+                `${card.prefix}${formatValue(stats.income)}`}
               {card.value === 'expenses' &&
-                `${card.prefix}${formatCurrency(stats.expenses)}`}
+                `${card.prefix}${formatValue(stats.expenses)}`}
             </p>
           </div>
         </motion.div>

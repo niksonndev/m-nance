@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useState } from 'react';
 import { parseLocalDate } from '../utils/formatters';
+import { useCurrency } from '../context/CurrencyContext';
 
 const TYPE_LABELS = {
   income: 'Receita',
@@ -29,6 +30,7 @@ export default function TransactionList({
   loading,
 }) {
   const [deletingId, setDeletingId] = useState(null);
+  const { formatValue } = useCurrency();
 
   // Confirmação fica a cargo da página (onDelete); aqui apenas
   // mostramos o spinner enquanto a exclusão está em andamento.
@@ -121,10 +123,8 @@ export default function TransactionList({
                 <span
                   className={`font-bold ${transaction.type === 'income' ? 'text-monkey-success' : 'text-monkey-danger'} text-sm sm:text-base whitespace-nowrap`}
                 >
-                  {transaction.type === 'income' ? '+' : '-'}R${' '}
-                  {Number(transaction.amount).toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2,
-                  })}
+                  {transaction.type === 'income' ? '+' : '-'}
+                  {formatValue(transaction.amount)}
                 </span>
               </div>
 

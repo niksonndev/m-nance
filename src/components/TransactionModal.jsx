@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import { addMonths, addWeeks, format } from 'date-fns';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { CATEGORIES } from '../constants/categories';
 import { parseLocalDate } from '../utils/formatters';
+import { currencyInfo } from '../constants/currencies';
 
 export default function TransactionModal({
   isOpen,
@@ -15,11 +17,13 @@ export default function TransactionModal({
   transaction = null,
 }) {
   const { user } = useAuth();
+  // A moeda é do app, não da transação (ver CurrencyContext): o lançamento é
+  // gravado com a moeda ativa e a troca de unidade vale para toda a interface.
+  const { currency } = useCurrency();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     type: 'expense',
     amount: '',
-    currency: 'BRL',
     category: '',
     description: '',
     date: new Date().toISOString().split('T')[0],
@@ -35,7 +39,6 @@ export default function TransactionModal({
         setFormData({
           type: transaction.type,
           amount: transaction.amount,
-          currency: transaction.currency || 'BRL',
           category: transaction.category,
           description: transaction.description || '',
           date:
@@ -48,7 +51,6 @@ export default function TransactionModal({
         setFormData({
           type: 'expense',
           amount: '',
-          currency: 'BRL',
           category: '',
           description: '',
           date: new Date().toISOString().split('T')[0],
@@ -96,7 +98,7 @@ export default function TransactionModal({
       const transactionData = {
         type: formData.type,
         amount: parseFloat(formData.amount),
-        currency: formData.currency,
+        currency,
         category: formData.category,
         description: formData.description,
         date: formData.date,
@@ -127,7 +129,7 @@ export default function TransactionModal({
               user_id: user.id,
               type: formData.type,
               amount: parseFloat(formData.amount),
-              currency: formData.currency,
+              currency,
               category: formData.category,
               description: formData.description,
               frequency: formData.recurring_frequency,
@@ -236,21 +238,19 @@ export default function TransactionModal({
                 </div>
               </div>
 
-              {/* Moeda + Valor */}
+              {/* Moeda + Valor: a moeda é global (Configurações → Moeda), então
+                  aqui só mostramos qual está ativa. */}
               <div className='flex flex-col sm:flex-row gap-3'>
                 <div className='w-full sm:w-24'>
                   <label className='block text-sm font-medium text-monkey-text mb-2'>
                     Moeda
                   </label>
-                  <select
-                    name='currency'
-                    value={formData.currency}
-                    onChange={handleChange}
-                    className='input-field'
+                  <div
+                    className='input-field flex items-center justify-center text-monkey-muted'
+                    title={`Moeda do app: ${currencyInfo(currency).label}. Mude em Configurações → Moeda.`}
                   >
-                    <option value='BRL'>R$</option>
-                    <option value='EUR'>€</option>
-                  </select>
+                    {currencyInfo(currency).symbol}
+                  </div>
                 </div>
                 <div className='flex-1'>
                   <label

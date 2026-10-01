@@ -1,9 +1,14 @@
-export function formatCurrency(value) {
-  if (value === null || value === undefined) return 'R$ 0,00';
+/**
+ * Formata um valor na moeda informada (padrão BRL, mantido por compatibilidade).
+ * A moeda ativa do app vem de useCurrency() — ver CurrencyContext.
+ */
+export function formatCurrency(value, currency = 'BRL') {
+  const numero =
+    value === null || value === undefined || value === '' ? 0 : Number(value);
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
-    currency: 'BRL',
-  }).format(value);
+    currency,
+  }).format(Number.isFinite(numero) ? numero : 0);
 }
 
 export function formatDate(date) {

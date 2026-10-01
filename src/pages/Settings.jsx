@@ -11,12 +11,15 @@ import {
   CheckCircle,
   LogOut,
   Repeat,
+  Coins,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
+import { currencyInfo } from '../constants/currencies';
 import { supabase } from '../lib/supabaseClient';
 import { useRecurring } from '../hooks/useRecurring';
-import { formatCurrency, formatDate } from '../utils/formatters';
+import { formatDate } from '../utils/formatters';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -25,6 +28,8 @@ export default function Settings() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [encerrandoId, setEncerrandoId] = useState(null);
+
+  const { currency, currencies, setCurrency, formatValue } = useCurrency();
 
   const {
     recorrencias,
@@ -145,11 +150,23 @@ export default function Settings() {
 
   const tabs = [
     { id: 'profile', label: 'Perfil', icon: User },
+    { id: 'currency', label: 'Moeda', icon: Coins },
     { id: 'security', label: 'Segurança', icon: Lock },
     { id: 'recurring', label: 'Recorrências', icon: Repeat },
     { id: 'notifications', label: 'Notificações', icon: Bell },
     { id: 'danger', label: 'Zona de perigo', icon: AlertCircle },
   ];
+
+  /**
+   * Troca a moeda do app inteiro. Não há conversão: os valores já lançados
+   * continuam iguais, só a unidade exibida muda — o aviso na tela deixa isso
+   * explícito para não parecer que o saldo foi convertido.
+   */
+  const handleCurrencyChange = (code) => {
+    if (code === currency) return;
+    setCurrency(code);
+    showMessage('success', `Moeda alterada para ${currencyInfo(code).label}`);
+  };
 
   /**
    * Encerra a recorrência: para de gerar lançamentos futuros. Os lançamentos já
@@ -322,6 +339,71 @@ export default function Settings() {
             </motion.div>
           )}
 
+          {activeTab === 'currency' && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className='space-y-6 max-w-md'
+            >
+              <div>
+                <h3 className='text-lg font-semibold text-monkey-text mb-2'>
+                  Moeda do app
+                </h3>
+                <p className='text-monkey-muted text-sm'>
+                  Vale para o app inteiro: cards, lista de transações, gráficos,
+                  filtros e as recorrências.
+                </p>
+              </div>
+
+              <div className='space-y-2'>
+                {currencies.map((moeda) => {
+                  const ativa = currency === moeda.code;
+                  return (
+                    <button
+                      key={moeda.code}
+                      type='button'
+                      onClick={() => handleCurrencyChange(moeda.code)}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-colors ${
+                        ativa
+                          ? 'border-monkey-primary bg-monkey-primary/10'
+                          : 'border-monkey-muted/30 bg-monkey-card hover:border-monkey-primary/50'
+                      }`}
+                    >
+                      <span className='flex items-center gap-3'>
+                        <span className='w-8 text-lg font-semibold text-monkey-text text-center'>
+                          {moeda.symbol}
+                        </span>
+                        <span className='text-left'>
+                          <span className='block text-monkey-text font-medium'>
+                            {moeda.label}
+                          </span>
+                          <span className='block text-xs text-monkey-muted'>
+                            {moeda.code}
+                          </span>
+                        </span>
+                      </span>
+                      {ativa && (
+                        <CheckCircle className='w-5 h-5 text-monkey-primary' />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className='flex items-start gap-3 p-4 bg-monkey-muted/10 border border-monkey-muted/20 rounded-lg'>
+                <AlertCircle className='w-5 h-5 text-monkey-primary flex-shrink-0 mt-0.5' />
+                <p className='text-sm text-monkey-muted'>
+                  Trocar a moeda{' '}
+                  <strong className='text-monkey-text'>não converte</strong> os
+                  valores já lançados — o app não usa cotação. Os números
+                  continuam iguais e só a unidade muda: um lançamento de 50
+                  aparece como {currencyInfo('BRL').symbol} 50,00 antes e como{' '}
+                  {currencyInfo('EUR').symbol} 50,00 depois.
+                </p>
+              </div>
+            </motion.div>
+          )}
+
           {activeTab === 'security' && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -333,7 +415,7 @@ export default function Settings() {
                   Como você entra
                 </h3>
                 <p className='text-monkey-muted text-sm'>
-                  O MonkeyNança usa somente o login do Google: não existe senha
+                  O Monkey Finance usa somente o login do Google: não existe senha
                   própria do app para criar, trocar ou esquecer.
                 </p>
               </div>
@@ -456,7 +538,7 @@ export default function Settings() {
                         }`}
                       >
                         {recorrencia.type === 'income' ? '+' : '-'}
-                        {formatCurrency(Number(recorrencia.amount))}
+                        {formatValue(recorrencia.amount)}
                       </span>
 
                       <button

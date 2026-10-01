@@ -18,6 +18,22 @@ describe('formatCurrency', () => {
     expect(formatted).toBe('R$ 0,00');
     expect(formatCurrency(undefined).replace(/\u00A0/g, ' ')).toBe('R$ 0,00');
   });
+
+  it('respeita a moeda do app', () => {
+    expect(formatCurrency(50, 'EUR').replace(/\u00A0/g, ' ')).toBe('€ 50,00');
+    // Em pt-BR o dólar é escrito como US$
+    expect(formatCurrency(50, 'USD').replace(/\u00A0/g, ' ')).toBe('US$ 50,00');
+  });
+
+  it('não quebra com valor inválido nem com amount em string', () => {
+    // numeric do Postgres pode chegar como string
+    expect(formatCurrency('1234.56', 'BRL').replace(/\u00A0/g, ' ')).toBe(
+      'R$ 1.234,56',
+    );
+    expect(formatCurrency('abc', 'BRL').replace(/\u00A0/g, ' ')).toBe(
+      'R$ 0,00',
+    );
+  });
 });
 
 describe('formatDate', () => {

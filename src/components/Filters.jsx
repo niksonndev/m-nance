@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { parseLocalDate } from '../utils/formatters';
+import { useCurrency } from '../context/CurrencyContext';
+import { currencyInfo } from '../constants/currencies';
 
 export default function Filters({
   filters,
@@ -13,6 +15,7 @@ export default function Filters({
   loading = false,
 }) {
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const { formatValue, currency } = useCurrency();
 
   const allCategories = [
     ...new Set(transactions.map((t) => t.category).filter(Boolean)),
@@ -183,7 +186,7 @@ export default function Filters({
               <div className='pt-4 border-t border-monkey-muted/20 space-y-4'>
                 <div>
                   <label className='block text-sm font-medium text-monkey-text mb-2'>
-                    Valor mínimo (R$)
+                    Valor mínimo ({currencyInfo(currency).symbol})
                   </label>
                   <input
                     type='number'
@@ -201,7 +204,7 @@ export default function Filters({
 
                 <div>
                   <label className='block text-sm font-medium text-monkey-text mb-2'>
-                    Valor máximo (R$)
+                    Valor máximo ({currencyInfo(currency).symbol})
                   </label>
                   <input
                     type='number'
@@ -282,18 +285,12 @@ export default function Filters({
             )}
             {filters.minAmount && (
               <span className='px-2 py-1 text-xs bg-monkey-primary/20 text-monkey-primary rounded'>
-                Mín: R${' '}
-                {Number(filters.minAmount).toLocaleString('pt-BR', {
-                  minimumFractionDigits: 2,
-                })}
+                Mín: {formatValue(filters.minAmount)}
               </span>
             )}
             {filters.maxAmount && (
               <span className='px-2 py-1 text-xs bg-monkey-primary/20 text-monkey-primary rounded'>
-                Máx: R${' '}
-                {Number(filters.maxAmount).toLocaleString('pt-BR', {
-                  minimumFractionDigits: 2,
-                })}
+                Máx: {formatValue(filters.maxAmount)}
               </span>
             )}
           </div>

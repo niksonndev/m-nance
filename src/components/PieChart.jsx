@@ -11,6 +11,7 @@ import {
   CATEGORY_COLORS,
   DEFAULT_CHART_COLORS,
 } from '../constants/categories';
+import { useCurrency } from '../context/CurrencyContext';
 
 ChartJS.register(CategoryScale, ArcElement, Tooltip, Legend);
 
@@ -20,6 +21,8 @@ export default function PieChart({
   title,
   emptyMessage = 'Nenhum dado disponível',
 }) {
+  const { formatValue } = useCurrency();
+
   if (!data || data.length === 0 || data.every((d) => d === 0)) {
     return (
       <motion.div
@@ -84,7 +87,7 @@ export default function PieChart({
           label: (context) => {
             const value = context.raw;
             const percentage = ((value / total) * 100).toFixed(1);
-            return `${context.label}: R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (${percentage}%)`;
+            return `${context.label}: ${formatValue(value)} (${percentage}%)`;
           },
         },
       },
@@ -130,10 +133,7 @@ export default function PieChart({
                 </div>
                 <div className='text-right'>
                   <span className='text-monkey-text font-medium'>
-                    R${' '}
-                    {value.toLocaleString('pt-BR', {
-                      minimumFractionDigits: 2,
-                    })}
+                    {formatValue(value)}
                   </span>
                   <span className='text-monkey-muted text-xs ml-2'>
                     {percentage}%
