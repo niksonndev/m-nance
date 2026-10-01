@@ -64,3 +64,40 @@ jobs:
           name: dist
           path: dist/
           retention-days: 7
+
+  # Publica no GitHub Pages apenas em push na master (PR não mexe no site).
+  # O site fica em subpasta — https://niksonndev.github.io/m-nance/ — por isso
+  # o build usa base '/m-nance/' e o PWA é todo relativo à base.
+  deploy:
+    name: Publicar no GitHub Pages
+    needs: qualidade
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    # Deploy não cancela o anterior: dois deploys simultâneos colidem no Pages.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Baixar o dist gerado no job de qualidade
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Configurar o Pages
+        uses: actions/configure-pages@v5
+
+      - name: Empacotar o site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Deploy
+        id: deploy
+        uses: actions/deploy-pages@v4
