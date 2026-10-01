@@ -13,7 +13,7 @@ export default function MobileNav({ onMenuClick }) {
             <Wallet className='w-5 h-5 text-monkey-bg' />
           </div>
           <span className='font-bold text-monkey-text text-lg'>
-            MonkeyNança
+            Monkey Finance
           </span>
         </div>
 

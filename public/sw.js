@@ -1,6 +1,6 @@
 /* eslint-env serviceworker */
 /**
- * Service worker do MonkeyNança.
+ * Service worker do Monkey Finance.
  *
  * Estratégia (sem workbox, para não adicionar dependências):
  * - install: lê /precache-manifest.json (gerado no build por vite.config.js) e
@@ -110,7 +110,7 @@ const OFFLINE_PAGE =
   '<body style="margin:0;background:#1a1a2e;color:#e8e8e8;font-family:system-ui;' +
   'display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center">' +
   '<div><h1 style="font-size:1.25rem">Você está offline</h1>' +
-  '<p style="color:#6b6b8a">Conecte-se à internet para carregar o MonkeyNança.</p>' +
+  '<p style="color:#6b6b8a">Conecte-se à internet para carregar o Monkey Finance.</p>' +
   '</div></body></html>';
 
 async function networkFirstNavigation(request) {

@@ -89,7 +89,9 @@ export default function Login() {
           <div className='w-16 h-16 bg-monkey-primary rounded-2xl flex items-center justify-center mx-auto mb-4'>
             <Wallet className='w-8 h-8 text-monkey-bg' />
           </div>
-          <h1 className='text-3xl font-bold text-monkey-text'>MonkeyNança</h1>
+          <h1 className='text-3xl font-bold text-monkey-text'>
+            Monkey Finance
+          </h1>
           <p className='text-monkey-muted mt-2'>
             Entre para cuidar do seu dinheiro
           </p>

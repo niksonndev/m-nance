@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from './useAuth';
+import { getSavedCurrency } from '../constants/currencies';
 import { ocorrenciasVencidas } from '../utils/recurring';
 
 /**
  * Recorrências do usuário: geração dos lançamentos vencidos e listagem para a
  * tela de configurações.
  *
- * A geração acontece no cliente porque o MonkeyNança não tem backend: quando o
+ * A geração acontece no cliente porque o Monkey Finance não tem backend: quando o
  * app abre, todas as ocorrências já vencidas (inclusive de meses em que o
  * usuário não entrou) viram lançamentos em `transactions` e o `next_date` da
  * regra avança.
@@ -43,7 +44,7 @@ async function gerarVencidas(userId) {
       user_id: userId,
       type: regra.type,
       amount: regra.amount,
-      currency: regra.currency || 'BRL',
+      currency: regra.currency || getSavedCurrency(userId),
       category: regra.category,
       description: regra.description,
       date,
