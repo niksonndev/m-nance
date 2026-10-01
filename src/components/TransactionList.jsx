@@ -125,7 +125,7 @@ export default function TransactionList({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: Math.min(indice * 0.02, 0.15) }}
                     title={horario}
-                    className='flex items-center gap-3 py-2.5'
+                    className='flex items-center gap-3 py-3'
                   >
                     <span
                       className={`w-1 self-stretch rounded-full flex-shrink-0 ${
@@ -134,19 +134,21 @@ export default function TransactionList({
                     />
 
                     <div className='flex-1 min-w-0'>
-                      <div className='flex items-center gap-1.5'>
-                        <span className='font-medium text-monkey-text text-sm truncate'>
-                          {transaction.category || 'Sem categoria'}
-                        </span>
-                        <span className='text-[10px] leading-4 px-1.5 rounded bg-monkey-muted/15 text-monkey-muted flex-shrink-0'>
+                      <span className='block font-medium text-monkey-text text-sm line-clamp-2 break-words'>
+                        {transaction.description ||
+                          transaction.category ||
+                          'Sem categoria'}
+                      </span>
+                      <div className='mt-0.5 flex items-center gap-1.5'>
+                        {transaction.description && (
+                          <span className='text-xs text-monkey-muted truncate'>
+                            {transaction.category || 'Sem categoria'}
+                          </span>
+                        )}
+                        <span className='text-[11px] leading-4 px-2 rounded bg-monkey-muted/15 text-monkey-muted flex-shrink-0'>
                           {TYPE_LABELS[transaction.type]}
                         </span>
                       </div>
-                      {transaction.description && (
-                        <p className='text-xs text-monkey-muted truncate'>
-                          {transaction.description}
-                        </p>
-                      )}
                     </div>
 
                     <div className='flex flex-col items-end flex-shrink-0'>
